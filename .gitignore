@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Remix IDE — local wallet/address state
+.address
+
+# Remix IDE — EVM state snapshots (not needed in repo)
+.states/
+
+# Remix IDE — npm dependencies fetched on compile (equivalent of node_modules)
+.deps/
+
+# Remix IDE — compiled artifacts (regenerated on every compile, not source of truth)
+artifacts/
+
+# Empty Remix Desktop placeholder dir (contains its own .git, treat as ignored)
+safe/
