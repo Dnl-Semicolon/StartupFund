@@ -37,7 +37,6 @@ contract CampaignManager is ICampaign {
         uint256 minContribution; // in wei, minimum 1e15 (0.001 ETH)
         uint256 deadline;      // Unix timestamp
         CampaignStatus status;
-        string tokenSymbol;    // cosmetic label shown in UI e.g. "EFLOW"
         uint256 backersCount;
         string[] tags;         // searchable labels e.g. ["ai", "climate", "hardware"]
         Milestone[] milestones;
@@ -133,7 +132,6 @@ contract CampaignManager is ICampaign {
     /// @param goalAmount    Funding target in wei (must be > 0)
     /// @param minContribution Minimum ETH per contribution in wei (>= 1e15 = 0.001 ETH)
     /// @param deadline      Unix timestamp for campaign end (any future time, max 60 days from now)
-    /// @param tokenSymbol   ERC-20 reward token label shown in UI (e.g. "EFLOW")
     /// @param tags          Searchable labels, lowercased by convention (e.g. ["ai", "climate"])
     /// @return campaignId   ID of the newly created campaign (0-indexed)
     /// @dev Campaign enters PENDING status. CampaignVoting.settleVoting() must be called
@@ -148,7 +146,6 @@ contract CampaignManager is ICampaign {
         uint256 goalAmount,
         uint256 minContribution,
         uint256 deadline,
-        string memory tokenSymbol,
         string[] memory tags
     ) external override onlyAuthorized returns (uint256 campaignId) {
         // Validations per assignment business rules
@@ -183,7 +180,6 @@ contract CampaignManager is ICampaign {
         c.minContribution = minContribution;
         c.deadline = deadline;
         c.status = CampaignStatus.PENDING;
-        c.tokenSymbol = tokenSymbol;
         c.backersCount = 0;
 
         // Store tags (lowercased client-side by convention)
@@ -395,7 +391,6 @@ contract CampaignManager is ICampaign {
             uint256 minContribution,
             uint256 deadline,
             uint8 status,
-            string memory tokenSymbol,
             uint256 backersCount
         )
     {
@@ -406,7 +401,6 @@ contract CampaignManager is ICampaign {
             c.minContribution,
             c.deadline,
             uint8(c.status),
-            c.tokenSymbol,
             c.backersCount
         );
     }
@@ -468,6 +462,34 @@ contract CampaignManager is ICampaign {
         returns (uint8)
     {
         return uint8(_campaigns[campaignId].status);
+    }
+
+    /// @notice Edit a campaign's mutable text fields. Called by StartupFund
+    ///         after creator + backers-count guards. Goal/deadline/min stay
+    ///         locked once on chain. Tags get fully replaced.
+    function editCampaign(
+        uint256 campaignId,
+        string memory newTitle,
+        string memory newSlug,
+        string memory newDescription,
+        string memory newShortDescription,
+        string memory newImageUrl,
+        string memory newCategory,
+        string[] memory newTags
+    ) external onlyAuthorized campaignExists(campaignId) {
+        Campaign storage c = _campaigns[campaignId];
+        require(c.backersCount == 0, "CampaignManager: Already has backers");
+        require(bytes(newTitle).length > 0, "CampaignManager: Title required");
+        c.title            = newTitle;
+        c.slug             = newSlug;
+        c.description      = newDescription;
+        c.shortDescription = newShortDescription;
+        c.imageUrl         = newImageUrl;
+        c.category         = newCategory;
+        delete c.tags;
+        for (uint256 i = 0; i < newTags.length; i++) {
+            c.tags.push(newTags[i]);
+        }
     }
 
     /// @notice Set profit-return terms for a campaign. Called by StartupFund

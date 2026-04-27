@@ -159,7 +159,6 @@ contract StartupFund {
     /// @param goalAmount        Funding target in wei (e.g. 1 ETH = 1000000000000000000)
     /// @param minContribution   Minimum contribution in wei (min: 1000000000000000 = 0.001 ETH)
     /// @param deadline          Unix timestamp for campaign end (any future time, max 60 days from now)
-    /// @param tokenSymbol       Reward token label e.g. "EFLOW" (cosmetic, shown in UI)
     /// @param tags              Searchable labels, lowercased by convention (e.g. ["ai","climate"])
     /// @return campaignId       The ID of the newly created campaign
     /// @dev Campaign enters PENDING status. Community voting opens immediately.
@@ -175,18 +174,36 @@ contract StartupFund {
         uint256 goalAmount,
         uint256 minContribution,
         uint256 deadline,
-        string memory tokenSymbol,
         string[] memory tags
     ) external onlyRegistered returns (uint256 campaignId) {
         campaignId = campaignManager.createCampaign(
             title, slug, description, shortDescription, imageUrl,
-            category, goalAmount, minContribution, deadline, tokenSymbol, tags
+            category, goalAmount, minContribution, deadline, tags
         );
 
         // Open the community voting window immediately
         campaignVoting.openVoting(campaignId);
 
         emit CampaignCreatedVia(campaignId, msg.sender);
+    }
+
+    /// @notice Edit a campaign's text fields. Creator-only, before any backers.
+    function editCampaign(
+        uint256 campaignId,
+        string memory newTitle,
+        string memory newSlug,
+        string memory newDescription,
+        string memory newShortDescription,
+        string memory newImageUrl,
+        string memory newCategory,
+        string[] memory newTags
+    ) external onlyRegistered {
+        (address creator, , , , , ) = campaignManager.getCampaignCore(campaignId);
+        require(msg.sender == creator, "StartupFund: Only creator can edit");
+        campaignManager.editCampaign(
+            campaignId, newTitle, newSlug, newDescription,
+            newShortDescription, newImageUrl, newCategory, newTags
+        );
     }
 
     /// @notice Attach profit-return terms to a freshly-created campaign.

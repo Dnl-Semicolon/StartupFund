@@ -16,11 +16,21 @@ interface ICampaign {
         uint256 goalAmount,
         uint256 minContribution,
         uint256 deadline,
-        string memory tokenSymbol,
         string[] memory tags
     ) external returns (uint256 campaignId);
 
     function setProfitTerms(uint256 campaignId, uint256 rate, uint256 returnDeadline) external;
+
+    function editCampaign(
+        uint256 campaignId,
+        string memory newTitle,
+        string memory newSlug,
+        string memory newDescription,
+        string memory newShortDescription,
+        string memory newImageUrl,
+        string memory newCategory,
+        string[] memory newTags
+    ) external;
 
     /// @notice Get core campaign details
     function getCampaignCore(uint256 campaignId) external view returns (
